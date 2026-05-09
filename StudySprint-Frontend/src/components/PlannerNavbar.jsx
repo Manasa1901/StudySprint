@@ -1,27 +1,29 @@
 const PlannerNavbar = ({ view, setView, darkMode }) => {
-  return (
-    <div className="flex justify-center gap-4 mb-8">
-      <button
-        onClick={() => setView("planner")}
-        className={`px-6 py-2 rounded-full font-semibold transition-colors duration-200 ${
-          view === "planner"
-            ? "bg-blue-500 text-white"
-            : `${darkMode ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`
-        }`}
-      >
-        📘 Study Planner
-      </button>
+  const tabs = [
+    { id: "planner", label: "Study Planner", icon: "📘" },
+    { id: "exams", label: "Exam Schedule", icon: "📅" },
+  ];
 
-      <button
-        onClick={() => setView("exams")}
-        className={`px-6 py-2 rounded-full font-semibold transition-colors duration-200 ${
-          view === "exams"
-            ? "bg-green-500 text-white"
-            : `${darkMode ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`
-        }`}
-      >
-        📅 Exam Schedule
-      </button>
+  return (
+    <div className={`flex justify-center mb-8`}>
+      <div className={`inline-flex rounded-xl p-1 gap-1 ${darkMode ? "bg-gray-800" : "bg-gray-100"}`}>
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setView(tab.id)}
+            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${
+              view === tab.id
+                ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md"
+                : darkMode
+                ? "text-gray-400 hover:text-white hover:bg-gray-700"
+                : "text-gray-500 hover:text-gray-800 hover:bg-white"
+            }`}
+          >
+            <span>{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 };

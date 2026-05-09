@@ -8,7 +8,69 @@ import PlannerNavbar from "./PlannerNavbar";
 import StudyHeatmap from "./StudyHeatmap";
 import api from "../api/axios";
 
-const Planner = ({ user, onLogout, darkMode, setDarkMode }) => {
+/* ── Reminder Banner ── */
+const ReminderBanner = ({ exams, darkMode }) => {
+  const [dismissed, setDismissed] = useState([]);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const due = exams.filter((exam) => {
+    if (dismissed.includes(exam._id)) return false;
+    const examDate = new Date(exam.date);
+    examDate.setHours(0, 0, 0, 0);
+    const daysLeft = Math.ceil((examDate - today) / (1000 * 60 * 60 * 24));
+    return daysLeft >= 0 && daysLeft <= Number(exam.reminder);
+  });
+
+  if (due.length === 0) return null;
+
+  return (
+    <div className="space-y-2 mb-5">
+      {due.map((exam) => {
+        const examDate = new Date(exam.date);
+        examDate.setHours(0, 0, 0, 0);
+        const daysLeft = Math.ceil((examDate - today) / (1000 * 60 * 60 * 24));
+        const isToday = daysLeft === 0;
+        const isTomorrow = daysLeft === 1;
+
+        const label = isToday ? "TODAY" : isTomorrow ? "TOMORROW" : `IN ${daysLeft} DAYS`;
+        const urgent = daysLeft <= 1;
+
+        return (
+          <div
+            key={exam._id}
+            className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-sm font-medium ${
+              urgent
+                ? darkMode
+                  ? "bg-red-900/30 border-red-700/50 text-red-300"
+                  : "bg-red-50 border-red-200 text-red-700"
+                : darkMode
+                ? "bg-amber-900/30 border-amber-700/50 text-amber-300"
+                : "bg-amber-50 border-amber-200 text-amber-700"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span>{urgent ? "🚨" : "🔔"}</span>
+              <span>
+                <span className="font-bold">{exam.subject}</span> exam is {label} — {exam.date?.slice(0, 10)} at {exam.time}
+              </span>
+            </div>
+            <button
+              onClick={() => setDismissed((p) => [...p, exam._id])}
+              className="shrink-0 opacity-60 hover:opacity-100 transition-opacity text-lg leading-none"
+              title="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const Planner = ({ user, onLogout, darkMode, setDarkMode, onProfileOpen }) => {
   /* ---------------- ENTRY ANIMATION ---------------- */
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -129,70 +191,53 @@ const Planner = ({ user, onLogout, darkMode, setDarkMode }) => {
 
   if (loading || examLoading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${darkMode ? "bg-gray-950" : "bg-gray-100"}`}>
-        <p className={`text-lg font-semibold animate-pulse ${darkMode ? "text-gray-300" : "text-gray-700"}`}>Loading planner...</p>
+      <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${darkMode ? "bg-gray-950" : "bg-slate-50"}`}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Loading planner...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? "bg-gray-950" : "bg-gray-100"}`}>
-      <Header user={user} onLogout={onLogout} darkMode={darkMode} setDarkMode={setDarkMode} />
+    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? "bg-gray-950" : "bg-slate-50"}`}>
+      <Header user={user} onLogout={onLogout} darkMode={darkMode} setDarkMode={setDarkMode} onProfileOpen={onProfileOpen} />
 
-      <div className="p-6 max-w-4xl mx-auto">
-        <h1 className={`text-3xl font-bold mb-4 text-center ${darkMode ? "text-white" : "text-gray-900"}`}>
-          StudySprint 🚀
-        </h1>
+      <div className="px-4 py-8 max-w-3xl mx-auto">
 
-        {/* -------- NAV BAR -------- */}
+        <ReminderBanner exams={exams} darkMode={darkMode} />
+
         <PlannerNavbar view={view} setView={setView} darkMode={darkMode} />
 
-        {/* ================= STUDY PLANNER ================= */}
         {view === "planner" && (
           <>
-            {/* 🔥 STUDY STREAK */}
-            <div className={`p-6 rounded-xl shadow mb-6 flex justify-between items-center transition-colors ${darkMode ? "bg-gray-900 border border-gray-700" : "bg-white"}`}>
-              <div>
-                <h2 className={`text-xl font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
-                  🔥 Study Streak
-                </h2>
-                <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-                  Stay consistent every day
-                </p>
+            {/* Stats row */}
+            <div className="grid grid-cols-2 gap-4 mb-5">
+              <div className={`p-5 rounded-2xl border shadow-sm flex items-center justify-between ${darkMode ? "bg-gray-900 border-gray-700/60" : "bg-white border-gray-100"}`}>
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>Study Streak</p>
+                  <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Stay consistent</p>
+                </div>
+                <div className="text-3xl font-bold text-orange-500">{studyStreak} 🔥</div>
               </div>
-              <div className="text-4xl font-bold text-orange-500">
-                {studyStreak}
-              </div>
+
+              {overallProgress.total > 0 && (
+                <div className={`p-5 rounded-2xl border shadow-sm ${darkMode ? "bg-gray-900 border-gray-700/60" : "bg-white border-gray-100"}`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <p className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? "text-gray-500" : "text-gray-400"}`}>Overall Progress</p>
+                    <span className={`text-lg font-bold ${darkMode ? "text-blue-400" : "text-blue-600"}`}>{overallProgress.percentage}%</span>
+                  </div>
+                  <div className={`w-full rounded-full h-2 ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}>
+                    <div className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500" style={{ width: `${overallProgress.percentage}%` }} />
+                  </div>
+                  <p className={`text-xs mt-1.5 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>{overallProgress.done}/{overallProgress.total} topics</p>
+                </div>
+              )}
             </div>
 
-            {/* 📊 STUDY HEATMAP */}
             {Object.keys(heatmap).length > 0 && (
               <StudyHeatmap heatmap={heatmap} darkMode={darkMode} />
-            )}
-
-            {/* 📈 OVERALL PROGRESS */}
-            {overallProgress.total > 0 && (
-              <div className={`p-6 rounded-xl shadow mb-8 transition-colors ${darkMode ? "bg-gray-900 border border-gray-700" : "bg-white"}`}>
-                <h2 className={`text-xl font-semibold mb-4 ${darkMode ? "text-white" : "text-gray-900"}`}>
-                  Overall Progress
-                </h2>
-
-                <div className="flex justify-between mb-2">
-                  <span className={darkMode ? "text-gray-400" : "text-gray-600"}>
-                    {overallProgress.done} of {overallProgress.total} topics completed
-                  </span>
-                  <span className={`text-2xl font-bold ${darkMode ? "text-blue-400" : "text-blue-600"}`}>
-                    {overallProgress.percentage}%
-                  </span>
-                </div>
-
-                <div className={`w-full rounded-full h-3 ${darkMode ? "bg-gray-700" : "bg-gray-200"}`}>
-                  <div
-                    className="bg-blue-500 h-3 rounded-full transition-all duration-300"
-                    style={{ width: `${overallProgress.percentage}%` }}
-                  />
-                </div>
-              </div>
             )}
 
             <SubjectForm data={data} setData={setData} darkMode={darkMode} />
@@ -200,7 +245,6 @@ const Planner = ({ user, onLogout, darkMode, setDarkMode }) => {
           </>
         )}
 
-        {/* ================= EXAMS ================= */}
         {view === "exams" && (
           <>
             <ScheduleExam onAddExam={addExam} darkMode={darkMode} />

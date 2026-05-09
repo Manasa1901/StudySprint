@@ -3,25 +3,31 @@ import { Link } from "react-router";
 import { useState, useEffect } from "react";
 import api from "../api/axios";
 
-const Home = ({ user, onLogout, darkMode, setDarkMode }) => {
+const StatCard = ({ icon, label, value, sub, darkMode, delay = "" }) => (
+  <div className={`p-6 rounded-2xl border transition-all duration-500 hover:shadow-lg hover:-translate-y-0.5 ${delay} ${
+    darkMode ? "bg-gray-900 border-gray-700/60" : "bg-white border-gray-100"
+  } shadow-sm`}>
+    <div className="flex items-center gap-3 mb-3">
+      <span className="text-2xl">{icon}</span>
+      <h3 className={`font-semibold ${darkMode ? "text-white" : "text-gray-800"}`}>{label}</h3>
+    </div>
+    <p className={`text-sm mb-2 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{sub}</p>
+    {value !== undefined && (
+      <div className={`text-3xl font-bold ${darkMode ? "text-blue-400" : "text-blue-600"}`}>{value}</div>
+    )}
+  </div>
+);
+
+const Home = ({ user, onLogout, darkMode, setDarkMode, onProfileOpen }) => {
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(true);
-
-  // used for simple fade/slide on first render
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
-  /* Fetch subjects and topics from backend */
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      
+      if (!user) { setLoading(false); return; }
       try {
         setLoading(true);
         const res = await api.get("/subjects");
@@ -32,142 +38,108 @@ const Home = ({ user, onLogout, darkMode, setDarkMode }) => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [user]);
 
-  /* Calculate progress from fetched data */
   const getProgress = () => {
-    if (!user || Object.keys(data).length === 0) {
+    if (!user || Object.keys(data).length === 0)
       return { subjects: 0, topics: 0, completed: 0, percentage: 0 };
-    }
-    
     const subjects = Object.keys(data).length;
     const allTopics = Object.values(data).flat();
-    const completed = allTopics.filter(topic => topic.done).length;
+    const completed = allTopics.filter(t => t.done).length;
     const total = allTopics.length;
-    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-    return { subjects, topics: total, completed, percentage };
+    return { subjects, topics: total, completed, percentage: total > 0 ? Math.round((completed / total) * 100) : 0 };
   };
 
   const progress = getProgress();
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? "bg-gray-950" : "bg-gray-100"}`}>
-      
-      <Header user={user} onLogout={onLogout} darkMode={darkMode} setDarkMode={setDarkMode} />
+    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? "bg-gray-950" : "bg-slate-50"}`}>
+      <Header user={user} onLogout={onLogout} darkMode={darkMode} setDarkMode={setDarkMode} onProfileOpen={onProfileOpen} />
 
-      {/* Hero Section */}
-      <div className="relative h-96 bg-cover bg-center" style={{
-        backgroundImage: "url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80')"
-      }}>
-        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-        <div className="relative z-10 flex items-center justify-center h-full">
-          <div className="text-center text-white px-6">
-            <h1 className={`text-5xl font-bold mb-4 transition-all duration-800 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-              {user ? "Welcome back to StudySprint!" : "Master Your Studies with StudySprint"}
+      {/* Hero */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700" />
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1600&q=60')] bg-cover bg-center opacity-10" />
+        <div className="relative z-10 flex items-center justify-center min-h-[420px] px-6 py-20">
+          <div className={`text-center text-white max-w-3xl transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-sm mb-6">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              {user ? `Welcome back, ${user.name || user.email}` : "Start your study journey today"}
+            </div>
+            <h1 className="text-5xl font-bold mb-4 leading-tight">
+              {user ? "Your Study Dashboard" : "Master Your Studies with StudySprint"}
             </h1>
-            <p className={`text-xl mb-8 max-w-2xl mx-auto transition-all duration-800 delay-150 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-              {user 
-                ? "Continue your learning journey and achieve your academic goals."
-                : "Organize your subjects, track your progress, and study smarter with our comprehensive learning platform."
-              }
+            <p className="text-xl text-blue-100 mb-8 max-w-xl mx-auto">
+              {user
+                ? "Track progress, manage subjects, and crush your academic goals."
+                : "Organize subjects, track topics, and study smarter with a platform built for students."}
             </p>
             {!user && (
-              <div className={`flex gap-4 justify-center transition-all duration-800 delay-300 ${mounted ? "opacity-100" : "opacity-0"}`}>
-                <Link
-                  to="/register"
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold transition"
-                >
-                  Get Started
+              <div className="flex gap-3 justify-center flex-wrap">
+                <Link to="/register" className="px-8 py-3 rounded-xl font-semibold bg-white text-blue-600 hover:bg-blue-50 transition shadow-lg">
+                  Get Started Free
                 </Link>
-                <Link
-                  to="/login"
-                  className="bg-transparent border-2 border-white hover:bg-white hover:text-gray-800 text-white px-8 py-3 rounded-lg text-lg font-semibold transition"
-                >
+                <Link to="/login" className="px-8 py-3 rounded-xl font-semibold border-2 border-white/60 text-white hover:bg-white/10 transition">
                   Sign In
                 </Link>
               </div>
             )}
+            {user && (
+              <Link to="/planner" className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-semibold bg-white text-blue-600 hover:bg-blue-50 transition shadow-lg">
+                Open Planner →
+              </Link>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="p-6 max-w-6xl mx-auto">
-        
-        {/* Features Section */}
-        <div className="text-center mb-12">
-          <h2 className={`text-3xl font-bold mb-4 ${darkMode ? "text-white" : "text-gray-800"}`}>
-            {user ? "Your Study Dashboard" : "Why Choose StudySprint?"}
+      {/* Cards */}
+      <div className="max-w-5xl mx-auto px-6 py-14">
+        <div className="text-center mb-10">
+          <h2 className={`text-2xl font-bold mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>
+            {user ? "Your Progress at a Glance" : "Everything You Need to Succeed"}
           </h2>
-          <p className={`max-w-2xl mx-auto ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-            {user 
-              ? "Track your progress and manage your study sessions effectively."
-              : "Join thousands of students who are achieving better results with our proven study methods."
-            }
+          <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+            {user ? "Keep the momentum going." : "Join thousands of students achieving better results."}
           </p>
         </div>
 
-        {/* Dashboard Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          <div className={`p-6 rounded-xl shadow hover:shadow-lg transition-all duration-500 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} ${
-            darkMode ? "bg-gray-900 border border-gray-700" : "bg-white"
-          }`}>
-            <h3 className={`text-xl font-semibold mb-2 ${darkMode ? "text-white" : ""}`}>📚 Subjects</h3>
-            <p className={`mb-2 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-              {user ? `${progress.subjects} subjects added` : "Add and manage all your exam subjects in one place."}
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <StatCard
+            icon="📚" label="Subjects" darkMode={darkMode}
+            sub={user ? `${progress.subjects} subjects added` : "Add and manage all your exam subjects in one place."}
+            value={user ? progress.subjects : undefined}
+          />
+          <StatCard
+            icon="✅" label="Topics" darkMode={darkMode} delay="delay-75"
+            sub={user ? `${progress.completed} of ${progress.topics} completed` : "Break subjects into topics and mark them done."}
+            value={user ? undefined : undefined}
+          >
             {user && (
-              <div className={`text-2xl font-bold ${darkMode ? "text-blue-400" : "text-blue-600"}`}>{progress.subjects}</div>
-            )}
-          </div>
-
-          <div className={`p-6 rounded-xl shadow hover:shadow-lg transition-all duration-500 delay-100 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} ${
-            darkMode ? "bg-gray-900 border border-gray-700" : "bg-white"
-          }`}>
-            <h3 className={`text-xl font-semibold mb-2 ${darkMode ? "text-white" : ""}`}>✅ Topics</h3>
-            <p className={`mb-2 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-              {user ? `${progress.completed}/${progress.topics} topics completed` : "Break subjects into topics and mark them as completed."}
-            </p>
-            {user && (
-              <div className={`w-full rounded-full h-2 mt-2 ${darkMode ? "bg-gray-700" : "bg-gray-200"}`}>
-                <div
-                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${progress.percentage}%` }}
-                ></div>
+              <div className={`w-full rounded-full h-2 mt-3 ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}>
+                <div className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500" style={{ width: `${progress.percentage}%` }} />
               </div>
             )}
-          </div>
-
-          <div className={`p-6 rounded-xl shadow hover:shadow-lg transition-all duration-500 delay-200 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} ${
-            darkMode ? "bg-gray-900 border border-gray-700" : "bg-white"
-          }`}>
-            <h3 className={`text-xl font-semibold mb-2 ${darkMode ? "text-white" : ""}`}>📈 Progress</h3>
-            <p className={`mb-2 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-              {user ? `${progress.percentage}% overall completion` : "Track your revision progress and stay motivated."}
-            </p>
-            {user && (
-              <div className={`text-2xl font-bold ${darkMode ? "text-blue-400" : "text-blue-600"}`}>{progress.percentage}%</div>
-            )}
-          </div>
-
+          </StatCard>
+          <StatCard
+            icon="📈" label="Progress" darkMode={darkMode} delay="delay-150"
+            sub={user ? `${progress.percentage}% overall completion` : "Track revision progress and stay motivated."}
+            value={user ? `${progress.percentage}%` : undefined}
+          />
         </div>
 
-        {user && (
-          <div className="text-center mt-12">
-            <Link
-              to="/planner"
-              className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold transition inline-block"
-            >
-              Start Planning Your Studies
+        {!user && (
+          <div className={`mt-12 p-8 rounded-2xl border text-center ${darkMode ? "bg-gray-900 border-gray-700/60" : "bg-white border-gray-100"} shadow-sm`}>
+            <h3 className={`text-xl font-bold mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>Ready to start?</h3>
+            <p className={`text-sm mb-5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Create a free account and begin organizing your studies today.</p>
+            <Link to="/register" className="inline-block px-8 py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 transition shadow-md">
+              Create Free Account
             </Link>
           </div>
         )}
-
       </div>
+
     </div>
   );
 };
