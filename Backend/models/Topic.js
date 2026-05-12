@@ -10,6 +10,11 @@ const topicSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  notes: {
+    type: String,
+    default: "",
+    trim: true
+  },
   subject: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Subject',

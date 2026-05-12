@@ -9,7 +9,7 @@ export const getSubjects = async (req, res) => {
     topics.forEach(topic => {
       const subjName = topic.subject.name;
       if (!data[subjName]) data[subjName] = [];
-      data[subjName].push({ name: topic.name, done: topic.done, _id: topic._id, updatedAt: topic.updatedAt });
+      data[subjName].push({ name: topic.name, done: topic.done, _id: topic._id, updatedAt: topic.updatedAt, notes: topic.notes || "", subjectId: topic.subject._id });
     });
     res.status(200).json({ data });
   } catch (error) {
@@ -27,6 +27,23 @@ export const createSubject = async (req, res) => {
     }
     const subject = await Subject.create({ name, user: userId });
     res.status(201).json({ subject });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const deleteSubject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.userData.id;
+
+    const subject = await Subject.findOne({ _id: id, user: userId });
+    if (!subject) return res.status(404).json({ message: "Subject not found" });
+
+    await Topic.deleteMany({ subject: id, user: userId });
+    await Subject.deleteOne({ _id: id });
+
+    res.status(200).json({ message: "Subject deleted" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

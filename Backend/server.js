@@ -23,12 +23,11 @@ app.use("/topics", topicRoutes);
 app.use("/exams", examRoutes);
 app.use("/analytics", analyticsRoutes);
 
-app.get("/profile",authMiddleware,async(req,res)=>{
-    const user = await User.findById(req.userData.id).select("-password")
-    res.status(200).json({message:"Profile",userData:user});
+app.get("/profile", authMiddleware, async (req, res) => {
+  const user = await User.findById(req.userData.id).select("-password");
+  res.status(200).json({ message: "Profile", userData: user });
 });
 
-app.listen(process.env.PORT, () =>
-  console.log(`Server running on http://localhost:${process.env.PORT}`)
-);
-
+app.listen(process.env.PORT, () => {
+  console.log(`Server running on http://localhost:${process.env.PORT}`);
+});

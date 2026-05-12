@@ -37,7 +37,28 @@ export const registerUser = async (req, res) => {
   }
 };
 
-/* ================= LOGIN ================= */
+/* ================= UPDATE USERNAME ================= */
+export const updateUsername = async (req, res) => {
+  try {
+    const { name } = req.body;
+    const userId = req.userData.id;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Name cannot be empty" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { name: name.trim() },
+      { new: true }
+    ).select("-password");
+
+    res.status(200).json({ user: { id: user._id, name: user.name, email: user.email } });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
