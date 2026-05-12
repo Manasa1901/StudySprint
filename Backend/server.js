@@ -15,7 +15,10 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ["https://study-sprint-wine.vercel.app", "http://localhost:3000"], // Allow Vercel frontend and local development
+  credentials: true
+}));
 app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/subjects", subjectRoutes);
