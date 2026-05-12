@@ -23,6 +23,10 @@ app.use("/topics", topicRoutes);
 app.use("/exams", examRoutes);
 app.use("/analytics", analyticsRoutes);
 
+app.get("/", (req, res) => {
+  res.send("Backend is running");
+});
+
 app.get("/profile", authMiddleware, async (req, res) => {
   const user = await User.findById(req.userData.id).select("-password");
   res.status(200).json({ message: "Profile", userData: user });
